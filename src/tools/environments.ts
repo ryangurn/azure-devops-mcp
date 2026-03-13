@@ -229,6 +229,9 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     }
   );
 
+  // VM resource tools use REST calls instead of the SDK because the SDK's
+  // VirtualMachineGroup methods (getVirtualMachineGroup, updateVirtualMachineGroup, etc.)
+  // have broken route mappings that return null or cause internal server errors.
   server.tool(
     ENVIRONMENT_TOOLS.environments_get_vm_resource,
     "Retrieves a virtual machine resource group for a specific environment.",
@@ -239,8 +242,24 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     },
     async ({ project, environmentId, resourceId }) => {
       const connection = await connectionProvider();
-      const taskAgentApi = await connection.getTaskAgentApi();
-      const resource = await taskAgentApi.getVirtualMachineGroup(project, environmentId, resourceId);
+      const orgUrl = connection.serverUrl;
+      const endpoint = `${orgUrl}/${project}/_apis/distributedtask/environments/${environmentId}/providers/virtualmachinegroups/${resourceId}?api-version=${apiVersion}`;
+      const token = await tokenProvider();
+
+      const response = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "User-Agent": userAgentProvider(),
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to get virtual machine resource group: ${response.status} ${errorText}`);
+      }
+
+      const resource = await response.json();
 
       return {
         content: [{ type: "text", text: JSON.stringify(resource, null, 2) }],
@@ -258,8 +277,26 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     },
     async ({ project, environmentId, name }) => {
       const connection = await connectionProvider();
-      const taskAgentApi = await connection.getTaskAgentApi();
-      const resource = await taskAgentApi.addVirtualMachineGroup({ name }, project, environmentId);
+      const orgUrl = connection.serverUrl;
+      const endpoint = `${orgUrl}/${project}/_apis/distributedtask/environments/${environmentId}/providers/virtualmachinegroups?api-version=${apiVersion}`;
+      const token = await tokenProvider();
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "User-Agent": userAgentProvider(),
+        },
+        body: JSON.stringify({ name }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to add virtual machine resource group: ${response.status} ${errorText}`);
+      }
+
+      const resource = await response.json();
 
       return {
         content: [{ type: "text", text: JSON.stringify(resource, null, 2) }],
@@ -267,23 +304,67 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     }
   );
 
+  // Tag updates use the internal Contribution HierarchyQuery API because there is
+  // no public REST endpoint for updating environment resource tags. This is the same
+  // API the Azure DevOps web UI uses when editing tags in the browser.
   server.tool(
     ENVIRONMENT_TOOLS.environments_update_vm_resource,
-    "Updates a virtual machine resource group for an environment, including tags.",
+    "Updates tags on a virtual machine environment resource using the Contribution API.",
     {
       project: z.string().describe("Project ID or name"),
       environmentId: z.number().describe("ID of the environment"),
-      resourceId: z.number().describe("ID of the virtual machine resource group to update"),
-      name: z.string().optional().describe("New name for the virtual machine resource group"),
-      tags: z.array(z.string()).optional().describe("Tags for the virtual machine resource group"),
+      resourceId: z.number().describe("ID of the virtual machine resource to update"),
+      tags: z.array(z.string()).describe("Complete set of tags for the resource (replaces all existing tags)"),
     },
-    async ({ project, environmentId, resourceId, name, tags }) => {
+    async ({ project, environmentId, resourceId, tags }) => {
       const connection = await connectionProvider();
-      const taskAgentApi = await connection.getTaskAgentApi();
-      const resource = await taskAgentApi.updateVirtualMachineGroup({ id: resourceId, name, tags } as any, project, environmentId);
+      const orgUrl = connection.serverUrl;
+      const endpoint = `${orgUrl}/_apis/Contribution/HierarchyQuery`;
+      const token = await tokenProvider();
+
+      const body = {
+        contributionIds: ["ms.vss-environments-web.environment-resources-tag-update-data-provider"],
+        dataProviderContext: {
+          properties: {
+            resourceId: String(resourceId),
+            resourceType: "2",
+            newTagsSet: tags,
+            sourcePage: {
+              url: `${orgUrl}/${project}/_environments/${environmentId}?view=resources`,
+              routeId: "ms.vss-environments-web.environments-route-with-id",
+              routeValues: {
+                project: project,
+                environmentId: String(environmentId),
+                viewname: "environment",
+                controller: "ContributedPage",
+                action: "Execute",
+              },
+            },
+          },
+        },
+      };
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json;api-version=5.0-preview.1;excludeUrls=true;enumsAsNumbers=true;msDateFormat=true;noArrayWrap=true",
+          "Authorization": `Bearer ${token}`,
+          "User-Agent": userAgentProvider(),
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to update resource tags: ${response.status} ${errorText}`);
+      }
+
+      const result = await response.json();
+      const updatedResource = result?.dataProviders?.["ms.vss-environments-web.environment-resources-tag-update-data-provider"];
 
       return {
-        content: [{ type: "text", text: JSON.stringify(resource, null, 2) }],
+        content: [{ type: "text", text: JSON.stringify(updatedResource ?? result, null, 2) }],
       };
     }
   );
@@ -298,8 +379,22 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     },
     async ({ project, environmentId, resourceId }) => {
       const connection = await connectionProvider();
-      const taskAgentApi = await connection.getTaskAgentApi();
-      await taskAgentApi.deleteVirtualMachineGroup(project, environmentId, resourceId);
+      const orgUrl = connection.serverUrl;
+      const endpoint = `${orgUrl}/${project}/_apis/distributedtask/environments/${environmentId}/providers/virtualmachinegroups/${resourceId}?api-version=${apiVersion}`;
+      const token = await tokenProvider();
+
+      const response = await fetch(endpoint, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "User-Agent": userAgentProvider(),
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to delete virtual machine resource group: ${response.status} ${errorText}`);
+      }
 
       return {
         content: [{ type: "text", text: JSON.stringify({ success: true, message: `Virtual machine resource group ${resourceId} deleted successfully` }, null, 2) }],

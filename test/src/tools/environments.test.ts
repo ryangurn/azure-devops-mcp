@@ -457,85 +457,160 @@ describe("configureEnvironmentTools", () => {
   });
 
   describe("environments_get_vm_resource tool", () => {
-    it("should call getVirtualMachineGroup with correct parameters", async () => {
+    it("should fetch VM resource group via REST with correct URL", async () => {
       configureEnvironmentTools(server, tokenProvider, connectionProvider, userAgentProvider);
       const call = (server.tool as jest.Mock).mock.calls.find(([toolName]) => toolName === "environments_get_vm_resource");
       if (!call) throw new Error("environments_get_vm_resource tool not registered");
       const [, , , handler] = call;
 
-      const mockTaskAgentApi = {
-        getVirtualMachineGroup: jest.fn().mockResolvedValue(mockVirtualMachineGroup),
+      (tokenProvider as jest.Mock).mockResolvedValue("mock-token");
+      const mockResponse = {
+        ok: true,
+        json: jest.fn().mockResolvedValue(mockVirtualMachineGroup),
       };
-      mockConnection.getTaskAgentApi.mockResolvedValue(mockTaskAgentApi);
+      (global.fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue(mockResponse as unknown as Response);
 
       const result = await handler({ project: "test-project", environmentId: 1, resourceId: 20 });
 
-      expect(mockTaskAgentApi.getVirtualMachineGroup).toHaveBeenCalledWith("test-project", 1, 20);
+      expect(global.fetch).toHaveBeenCalledWith(`https://dev.azure.com/test-org/test-project/_apis/distributedtask/environments/1/providers/virtualmachinegroups/20?api-version=${apiVersion}`, {
+        method: "GET",
+        headers: {
+          "Authorization": "Bearer mock-token",
+          "User-Agent": "Jest",
+        },
+      });
       expect(result.content[0].text).toBe(JSON.stringify(mockVirtualMachineGroup, null, 2));
     });
   });
 
   describe("environments_add_vm_resource tool", () => {
-    it("should call addVirtualMachineGroup with correct parameters", async () => {
+    it("should create VM resource group via REST with correct URL and body", async () => {
       configureEnvironmentTools(server, tokenProvider, connectionProvider, userAgentProvider);
       const call = (server.tool as jest.Mock).mock.calls.find(([toolName]) => toolName === "environments_add_vm_resource");
       if (!call) throw new Error("environments_add_vm_resource tool not registered");
       const [, , , handler] = call;
 
-      const mockTaskAgentApi = {
-        addVirtualMachineGroup: jest.fn().mockResolvedValue(mockVirtualMachineGroup),
+      (tokenProvider as jest.Mock).mockResolvedValue("mock-token");
+      const mockResponse = {
+        ok: true,
+        json: jest.fn().mockResolvedValue(mockVirtualMachineGroup),
       };
-      mockConnection.getTaskAgentApi.mockResolvedValue(mockTaskAgentApi);
+      (global.fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue(mockResponse as unknown as Response);
 
       const result = await handler({ project: "test-project", environmentId: 1, name: "vm-pool-dev" });
 
-      expect(mockTaskAgentApi.addVirtualMachineGroup).toHaveBeenCalledWith({ name: "vm-pool-dev" }, "test-project", 1);
+      expect(global.fetch).toHaveBeenCalledWith(`https://dev.azure.com/test-org/test-project/_apis/distributedtask/environments/1/providers/virtualmachinegroups?api-version=${apiVersion}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer mock-token",
+          "User-Agent": "Jest",
+        },
+        body: JSON.stringify({ name: "vm-pool-dev" }),
+      });
       expect(result.content[0].text).toBe(JSON.stringify(mockVirtualMachineGroup, null, 2));
     });
   });
 
   describe("environments_update_vm_resource tool", () => {
-    it("should call updateVirtualMachineGroup with correct parameters including tags", async () => {
+    it("should update resource tags via Contribution HierarchyQuery API", async () => {
       configureEnvironmentTools(server, tokenProvider, connectionProvider, userAgentProvider);
       const call = (server.tool as jest.Mock).mock.calls.find(([toolName]) => toolName === "environments_update_vm_resource");
       if (!call) throw new Error("environments_update_vm_resource tool not registered");
       const [, , , handler] = call;
 
-      const mockTaskAgentApi = {
-        updateVirtualMachineGroup: jest.fn().mockResolvedValue(mockUpdatedVirtualMachineGroup),
+      (tokenProvider as jest.Mock).mockResolvedValue("mock-token");
+      const contributionResponse = {
+        dataProviders: {
+          "ms.vss-environments-web.environment-resources-tag-update-data-provider": mockUpdatedVirtualMachineGroup,
+        },
       };
-      mockConnection.getTaskAgentApi.mockResolvedValue(mockTaskAgentApi);
+      const mockResponse = {
+        ok: true,
+        json: jest.fn().mockResolvedValue(contributionResponse),
+      };
+      (global.fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue(mockResponse as unknown as Response);
 
       const params = {
         project: "test-project",
         environmentId: 1,
         resourceId: 20,
-        name: "vm-pool-updated",
         tags: ["staging", "vm"],
       };
 
       const result = await handler(params);
 
-      expect(mockTaskAgentApi.updateVirtualMachineGroup).toHaveBeenCalledWith({ id: 20, name: "vm-pool-updated", tags: ["staging", "vm"] }, "test-project", 1);
+      expect(global.fetch).toHaveBeenCalledWith("https://dev.azure.com/test-org/_apis/Contribution/HierarchyQuery", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json;api-version=5.0-preview.1;excludeUrls=true;enumsAsNumbers=true;msDateFormat=true;noArrayWrap=true",
+          "Authorization": "Bearer mock-token",
+          "User-Agent": "Jest",
+        },
+        body: JSON.stringify({
+          contributionIds: ["ms.vss-environments-web.environment-resources-tag-update-data-provider"],
+          dataProviderContext: {
+            properties: {
+              resourceId: "20",
+              resourceType: "2",
+              newTagsSet: ["staging", "vm"],
+              sourcePage: {
+                url: "https://dev.azure.com/test-org/test-project/_environments/1?view=resources",
+                routeId: "ms.vss-environments-web.environments-route-with-id",
+                routeValues: {
+                  project: "test-project",
+                  environmentId: "1",
+                  viewname: "environment",
+                  controller: "ContributedPage",
+                  action: "Execute",
+                },
+              },
+            },
+          },
+        }),
+      });
       expect(result.content[0].text).toBe(JSON.stringify(mockUpdatedVirtualMachineGroup, null, 2));
+    });
+
+    it("should handle HTTP errors correctly", async () => {
+      configureEnvironmentTools(server, tokenProvider, connectionProvider, userAgentProvider);
+      const call = (server.tool as jest.Mock).mock.calls.find(([toolName]) => toolName === "environments_update_vm_resource");
+      if (!call) throw new Error("environments_update_vm_resource tool not registered");
+      const [, , , handler] = call;
+
+      (tokenProvider as jest.Mock).mockResolvedValue("mock-token");
+      const mockResponse = {
+        ok: false,
+        status: 500,
+        text: jest.fn().mockResolvedValue("Internal Server Error"),
+      };
+      (global.fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue(mockResponse as unknown as Response);
+
+      await expect(handler({ project: "test-project", environmentId: 1, resourceId: 20, tags: ["test"] })).rejects.toThrow("Failed to update resource tags: 500 Internal Server Error");
     });
   });
 
   describe("environments_delete_vm_resource tool", () => {
-    it("should call deleteVirtualMachineGroup with correct parameters", async () => {
+    it("should delete VM resource group via REST with correct URL", async () => {
       configureEnvironmentTools(server, tokenProvider, connectionProvider, userAgentProvider);
       const call = (server.tool as jest.Mock).mock.calls.find(([toolName]) => toolName === "environments_delete_vm_resource");
       if (!call) throw new Error("environments_delete_vm_resource tool not registered");
       const [, , , handler] = call;
 
-      const mockTaskAgentApi = {
-        deleteVirtualMachineGroup: jest.fn().mockResolvedValue(undefined),
-      };
-      mockConnection.getTaskAgentApi.mockResolvedValue(mockTaskAgentApi);
+      (tokenProvider as jest.Mock).mockResolvedValue("mock-token");
+      const mockResponse = { ok: true };
+      (global.fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue(mockResponse as unknown as Response);
 
       const result = await handler({ project: "test-project", environmentId: 1, resourceId: 20 });
 
-      expect(mockTaskAgentApi.deleteVirtualMachineGroup).toHaveBeenCalledWith("test-project", 1, 20);
+      expect(global.fetch).toHaveBeenCalledWith(`https://dev.azure.com/test-org/test-project/_apis/distributedtask/environments/1/providers/virtualmachinegroups/20?api-version=${apiVersion}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": "Bearer mock-token",
+          "User-Agent": "Jest",
+        },
+      });
       expect(result.content[0].text).toBe(JSON.stringify({ success: true, message: "Virtual machine resource group 20 deleted successfully" }, null, 2));
     });
   });

@@ -509,13 +509,14 @@ describe("configureEnvironmentTools", () => {
       const params = {
         project: "test-project",
         environmentId: 1,
+        resourceId: 20,
         name: "vm-pool-updated",
         tags: ["staging", "vm"],
       };
 
       const result = await handler(params);
 
-      expect(mockTaskAgentApi.updateVirtualMachineGroup).toHaveBeenCalledWith({ name: "vm-pool-updated", tags: ["staging", "vm"] }, "test-project", 1);
+      expect(mockTaskAgentApi.updateVirtualMachineGroup).toHaveBeenCalledWith({ id: 20, name: "vm-pool-updated", tags: ["staging", "vm"] }, "test-project", 1);
       expect(result.content[0].text).toBe(JSON.stringify(mockUpdatedVirtualMachineGroup, null, 2));
     });
   });

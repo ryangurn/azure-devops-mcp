@@ -273,13 +273,14 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     {
       project: z.string().describe("Project ID or name"),
       environmentId: z.number().describe("ID of the environment"),
+      resourceId: z.number().describe("ID of the virtual machine resource group to update"),
       name: z.string().optional().describe("New name for the virtual machine resource group"),
       tags: z.array(z.string()).optional().describe("Tags for the virtual machine resource group"),
     },
-    async ({ project, environmentId, name, tags }) => {
+    async ({ project, environmentId, resourceId, name, tags }) => {
       const connection = await connectionProvider();
       const taskAgentApi = await connection.getTaskAgentApi();
-      const resource = await taskAgentApi.updateVirtualMachineGroup({ name, tags } as any, project, environmentId);
+      const resource = await taskAgentApi.updateVirtualMachineGroup({ id: resourceId, name, tags } as any, project, environmentId);
 
       return {
         content: [{ type: "text", text: JSON.stringify(resource, null, 2) }],

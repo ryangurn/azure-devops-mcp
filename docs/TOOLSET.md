@@ -235,7 +235,7 @@ Adds a virtual machine resource group to an environment.
 
 Updates a virtual machine resource group for an environment, including tags.
 
-- **Required**: `project`, `environmentId`
+- **Required**: `project`, `environmentId`, `resourceId`
 - **Optional**: `name`, `tags`
 
 ### mcp_ado_environments_delete_vm_resource

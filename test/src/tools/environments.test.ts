@@ -6,7 +6,16 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebApi } from "azure-devops-node-api";
 import { configureEnvironmentTools } from "../../../src/tools/environments";
 import { apiVersion } from "../../../src/utils.js";
-import { mockEnvironments, mockEnvironment, mockCreatedEnvironment, mockUpdatedEnvironment, mockDeploymentRecords } from "../../mocks/environments";
+import {
+  mockEnvironments,
+  mockEnvironment,
+  mockCreatedEnvironment,
+  mockUpdatedEnvironment,
+  mockDeploymentRecords,
+  mockKubernetesResource,
+  mockVirtualMachineGroup,
+  mockUpdatedVirtualMachineGroup,
+} from "../../mocks/environments";
 
 // Mock fetch globally
 global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
@@ -373,6 +382,160 @@ describe("configureEnvironmentTools", () => {
       await expect(handler(params)).rejects.toThrow("Failed to get access token");
 
       expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("environments_get_kubernetes_resource tool", () => {
+    it("should call getKubernetesResource with correct parameters", async () => {
+      configureEnvironmentTools(server, tokenProvider, connectionProvider, userAgentProvider);
+      const call = (server.tool as jest.Mock).mock.calls.find(([toolName]) => toolName === "environments_get_kubernetes_resource");
+      if (!call) throw new Error("environments_get_kubernetes_resource tool not registered");
+      const [, , , handler] = call;
+
+      const mockTaskAgentApi = {
+        getKubernetesResource: jest.fn().mockResolvedValue(mockKubernetesResource),
+      };
+      mockConnection.getTaskAgentApi.mockResolvedValue(mockTaskAgentApi);
+
+      const result = await handler({ project: "test-project", environmentId: 1, resourceId: 10 });
+
+      expect(mockTaskAgentApi.getKubernetesResource).toHaveBeenCalledWith("test-project", 1, 10);
+      expect(result.content[0].text).toBe(JSON.stringify(mockKubernetesResource, null, 2));
+    });
+  });
+
+  describe("environments_add_kubernetes_resource tool", () => {
+    it("should call addKubernetesResource with correct parameters", async () => {
+      configureEnvironmentTools(server, tokenProvider, connectionProvider, userAgentProvider);
+      const call = (server.tool as jest.Mock).mock.calls.find(([toolName]) => toolName === "environments_add_kubernetes_resource");
+      if (!call) throw new Error("environments_add_kubernetes_resource tool not registered");
+      const [, , , handler] = call;
+
+      const mockTaskAgentApi = {
+        addKubernetesResource: jest.fn().mockResolvedValue(mockKubernetesResource),
+      };
+      mockConnection.getTaskAgentApi.mockResolvedValue(mockTaskAgentApi);
+
+      const params = {
+        project: "test-project",
+        environmentId: 1,
+        name: "k8s-dev",
+        clusterName: "dev-cluster",
+        namespace: "default",
+        serviceEndpointId: "endpoint-1",
+        tags: ["dev", "kubernetes"],
+      };
+
+      const result = await handler(params);
+
+      expect(mockTaskAgentApi.addKubernetesResource).toHaveBeenCalledWith(
+        { name: "k8s-dev", clusterName: "dev-cluster", namespace: "default", tags: ["dev", "kubernetes"], serviceEndpointId: "endpoint-1" },
+        "test-project",
+        1
+      );
+      expect(result.content[0].text).toBe(JSON.stringify(mockKubernetesResource, null, 2));
+    });
+  });
+
+  describe("environments_delete_kubernetes_resource tool", () => {
+    it("should call deleteKubernetesResource with correct parameters", async () => {
+      configureEnvironmentTools(server, tokenProvider, connectionProvider, userAgentProvider);
+      const call = (server.tool as jest.Mock).mock.calls.find(([toolName]) => toolName === "environments_delete_kubernetes_resource");
+      if (!call) throw new Error("environments_delete_kubernetes_resource tool not registered");
+      const [, , , handler] = call;
+
+      const mockTaskAgentApi = {
+        deleteKubernetesResource: jest.fn().mockResolvedValue(undefined),
+      };
+      mockConnection.getTaskAgentApi.mockResolvedValue(mockTaskAgentApi);
+
+      const result = await handler({ project: "test-project", environmentId: 1, resourceId: 10 });
+
+      expect(mockTaskAgentApi.deleteKubernetesResource).toHaveBeenCalledWith("test-project", 1, 10);
+      expect(result.content[0].text).toBe(JSON.stringify({ success: true, message: "Kubernetes resource 10 deleted successfully" }, null, 2));
+    });
+  });
+
+  describe("environments_get_vm_resource tool", () => {
+    it("should call getVirtualMachineGroup with correct parameters", async () => {
+      configureEnvironmentTools(server, tokenProvider, connectionProvider, userAgentProvider);
+      const call = (server.tool as jest.Mock).mock.calls.find(([toolName]) => toolName === "environments_get_vm_resource");
+      if (!call) throw new Error("environments_get_vm_resource tool not registered");
+      const [, , , handler] = call;
+
+      const mockTaskAgentApi = {
+        getVirtualMachineGroup: jest.fn().mockResolvedValue(mockVirtualMachineGroup),
+      };
+      mockConnection.getTaskAgentApi.mockResolvedValue(mockTaskAgentApi);
+
+      const result = await handler({ project: "test-project", environmentId: 1, resourceId: 20 });
+
+      expect(mockTaskAgentApi.getVirtualMachineGroup).toHaveBeenCalledWith("test-project", 1, 20);
+      expect(result.content[0].text).toBe(JSON.stringify(mockVirtualMachineGroup, null, 2));
+    });
+  });
+
+  describe("environments_add_vm_resource tool", () => {
+    it("should call addVirtualMachineGroup with correct parameters", async () => {
+      configureEnvironmentTools(server, tokenProvider, connectionProvider, userAgentProvider);
+      const call = (server.tool as jest.Mock).mock.calls.find(([toolName]) => toolName === "environments_add_vm_resource");
+      if (!call) throw new Error("environments_add_vm_resource tool not registered");
+      const [, , , handler] = call;
+
+      const mockTaskAgentApi = {
+        addVirtualMachineGroup: jest.fn().mockResolvedValue(mockVirtualMachineGroup),
+      };
+      mockConnection.getTaskAgentApi.mockResolvedValue(mockTaskAgentApi);
+
+      const result = await handler({ project: "test-project", environmentId: 1, name: "vm-pool-dev" });
+
+      expect(mockTaskAgentApi.addVirtualMachineGroup).toHaveBeenCalledWith({ name: "vm-pool-dev" }, "test-project", 1);
+      expect(result.content[0].text).toBe(JSON.stringify(mockVirtualMachineGroup, null, 2));
+    });
+  });
+
+  describe("environments_update_vm_resource tool", () => {
+    it("should call updateVirtualMachineGroup with correct parameters including tags", async () => {
+      configureEnvironmentTools(server, tokenProvider, connectionProvider, userAgentProvider);
+      const call = (server.tool as jest.Mock).mock.calls.find(([toolName]) => toolName === "environments_update_vm_resource");
+      if (!call) throw new Error("environments_update_vm_resource tool not registered");
+      const [, , , handler] = call;
+
+      const mockTaskAgentApi = {
+        updateVirtualMachineGroup: jest.fn().mockResolvedValue(mockUpdatedVirtualMachineGroup),
+      };
+      mockConnection.getTaskAgentApi.mockResolvedValue(mockTaskAgentApi);
+
+      const params = {
+        project: "test-project",
+        environmentId: 1,
+        name: "vm-pool-updated",
+        tags: ["staging", "vm"],
+      };
+
+      const result = await handler(params);
+
+      expect(mockTaskAgentApi.updateVirtualMachineGroup).toHaveBeenCalledWith({ name: "vm-pool-updated", tags: ["staging", "vm"] }, "test-project", 1);
+      expect(result.content[0].text).toBe(JSON.stringify(mockUpdatedVirtualMachineGroup, null, 2));
+    });
+  });
+
+  describe("environments_delete_vm_resource tool", () => {
+    it("should call deleteVirtualMachineGroup with correct parameters", async () => {
+      configureEnvironmentTools(server, tokenProvider, connectionProvider, userAgentProvider);
+      const call = (server.tool as jest.Mock).mock.calls.find(([toolName]) => toolName === "environments_delete_vm_resource");
+      if (!call) throw new Error("environments_delete_vm_resource tool not registered");
+      const [, , , handler] = call;
+
+      const mockTaskAgentApi = {
+        deleteVirtualMachineGroup: jest.fn().mockResolvedValue(undefined),
+      };
+      mockConnection.getTaskAgentApi.mockResolvedValue(mockTaskAgentApi);
+
+      const result = await handler({ project: "test-project", environmentId: 1, resourceId: 20 });
+
+      expect(mockTaskAgentApi.deleteVirtualMachineGroup).toHaveBeenCalledWith("test-project", 1, 20);
+      expect(result.content[0].text).toBe(JSON.stringify({ success: true, message: "Virtual machine resource group 20 deleted successfully" }, null, 2));
     });
   });
 });

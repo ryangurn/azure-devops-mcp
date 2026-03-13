@@ -15,6 +15,13 @@
 | Environments      | [mcp_ado_environments_update](#mcp_ado_environments_update)                                               | Update an environment's name or description              |
 | Environments      | [mcp_ado_environments_delete](#mcp_ado_environments_delete)                                               | Delete a pipeline environment                            |
 | Environments      | [mcp_ado_environments_get_deployment_records](#mcp_ado_environments_get_deployment_records)               | Get deployment execution records for an environment      |
+| Environments      | [mcp_ado_environments_get_kubernetes_resource](#mcp_ado_environments_get_kubernetes_resource)             | Get a Kubernetes resource for an environment             |
+| Environments      | [mcp_ado_environments_add_kubernetes_resource](#mcp_ado_environments_add_kubernetes_resource)             | Add a Kubernetes resource to an environment              |
+| Environments      | [mcp_ado_environments_delete_kubernetes_resource](#mcp_ado_environments_delete_kubernetes_resource)       | Delete a Kubernetes resource from an environment         |
+| Environments      | [mcp_ado_environments_get_vm_resource](#mcp_ado_environments_get_vm_resource)                             | Get a VM resource group for an environment               |
+| Environments      | [mcp_ado_environments_add_vm_resource](#mcp_ado_environments_add_vm_resource)                             | Add a VM resource group to an environment                |
+| Environments      | [mcp_ado_environments_update_vm_resource](#mcp_ado_environments_update_vm_resource)                       | Update a VM resource group including tags                |
+| Environments      | [mcp_ado_environments_delete_vm_resource](#mcp_ado_environments_delete_vm_resource)                       | Delete a VM resource group from an environment           |
 | Pipelines         | [mcp_ado_pipelines_create_pipeline](#mcp_ado_pipelines_create_pipeline)                                   | Create a new pipeline with YAML configuration            |
 | Pipelines         | [mcp_ado_pipelines_get_builds](#mcp_ado_pipelines_get_builds)                                             | Retrieve a list of builds with optional filters          |
 | Pipelines         | [mcp_ado_pipelines_get_build_status](#mcp_ado_pipelines_get_build_status)                                 | Get the status of a specific build                       |
@@ -188,6 +195,55 @@ Get deployment execution records for an environment.
 
 - **Required**: `project`, `environmentId`
 - **Optional**: `continuationToken`, `top`
+
+### mcp_ado_environments_get_kubernetes_resource
+
+Retrieves a Kubernetes resource for a specific environment.
+
+- **Required**: `project`, `environmentId`, `resourceId`
+- **Optional**: None
+
+### mcp_ado_environments_add_kubernetes_resource
+
+Adds a Kubernetes resource to an environment.
+
+- **Required**: `project`, `environmentId`, `name`, `namespace`, `serviceEndpointId`
+- **Optional**: `clusterName`, `tags`
+
+### mcp_ado_environments_delete_kubernetes_resource
+
+Deletes a Kubernetes resource from an environment.
+
+- **Required**: `project`, `environmentId`, `resourceId`
+- **Optional**: None
+
+### mcp_ado_environments_get_vm_resource
+
+Retrieves a virtual machine resource group for a specific environment.
+
+- **Required**: `project`, `environmentId`, `resourceId`
+- **Optional**: None
+
+### mcp_ado_environments_add_vm_resource
+
+Adds a virtual machine resource group to an environment.
+
+- **Required**: `project`, `environmentId`, `name`
+- **Optional**: None
+
+### mcp_ado_environments_update_vm_resource
+
+Updates a virtual machine resource group for an environment, including tags.
+
+- **Required**: `project`, `environmentId`
+- **Optional**: `name`, `tags`
+
+### mcp_ado_environments_delete_vm_resource
+
+Deletes a virtual machine resource group from an environment.
+
+- **Required**: `project`, `environmentId`, `resourceId`
+- **Optional**: None
 
 ## Pipelines
 

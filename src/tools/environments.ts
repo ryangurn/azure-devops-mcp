@@ -14,6 +14,13 @@ const ENVIRONMENT_TOOLS = {
   environments_update: "environments_update",
   environments_delete: "environments_delete",
   environments_get_deployment_records: "environments_get_deployment_records",
+  environments_get_kubernetes_resource: "environments_get_kubernetes_resource",
+  environments_add_kubernetes_resource: "environments_add_kubernetes_resource",
+  environments_delete_kubernetes_resource: "environments_delete_kubernetes_resource",
+  environments_get_vm_resource: "environments_get_vm_resource",
+  environments_add_vm_resource: "environments_add_vm_resource",
+  environments_update_vm_resource: "environments_update_vm_resource",
+  environments_delete_vm_resource: "environments_delete_vm_resource",
 };
 
 function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promise<string>, connectionProvider: () => Promise<WebApi>, userAgentProvider: () => string) {
@@ -157,6 +164,144 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
 
       return {
         content: [{ type: "text", text: JSON.stringify(deploymentRecords, null, 2) }],
+      };
+    }
+  );
+
+  server.tool(
+    ENVIRONMENT_TOOLS.environments_get_kubernetes_resource,
+    "Retrieves a Kubernetes resource for a specific environment.",
+    {
+      project: z.string().describe("Project ID or name"),
+      environmentId: z.number().describe("ID of the environment"),
+      resourceId: z.number().describe("ID of the Kubernetes resource"),
+    },
+    async ({ project, environmentId, resourceId }) => {
+      const connection = await connectionProvider();
+      const taskAgentApi = await connection.getTaskAgentApi();
+      const resource = await taskAgentApi.getKubernetesResource(project, environmentId, resourceId);
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(resource, null, 2) }],
+      };
+    }
+  );
+
+  server.tool(
+    ENVIRONMENT_TOOLS.environments_add_kubernetes_resource,
+    "Adds a Kubernetes resource to an environment.",
+    {
+      project: z.string().describe("Project ID or name"),
+      environmentId: z.number().describe("ID of the environment"),
+      name: z.string().describe("Name of the Kubernetes resource"),
+      clusterName: z.string().optional().describe("Name of the Kubernetes cluster"),
+      namespace: z.string().describe("Kubernetes namespace"),
+      serviceEndpointId: z.string().describe("ID of the service endpoint for the cluster"),
+      tags: z.array(z.string()).optional().describe("Tags for the Kubernetes resource"),
+    },
+    async ({ project, environmentId, name, clusterName, namespace, tags, serviceEndpointId }) => {
+      const connection = await connectionProvider();
+      const taskAgentApi = await connection.getTaskAgentApi();
+      const resource = await taskAgentApi.addKubernetesResource({ name, clusterName, namespace, tags, serviceEndpointId } as any, project, environmentId);
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(resource, null, 2) }],
+      };
+    }
+  );
+
+  server.tool(
+    ENVIRONMENT_TOOLS.environments_delete_kubernetes_resource,
+    "Deletes a Kubernetes resource from an environment.",
+    {
+      project: z.string().describe("Project ID or name"),
+      environmentId: z.number().describe("ID of the environment"),
+      resourceId: z.number().describe("ID of the Kubernetes resource to delete"),
+    },
+    async ({ project, environmentId, resourceId }) => {
+      const connection = await connectionProvider();
+      const taskAgentApi = await connection.getTaskAgentApi();
+      await taskAgentApi.deleteKubernetesResource(project, environmentId, resourceId);
+
+      return {
+        content: [{ type: "text", text: JSON.stringify({ success: true, message: `Kubernetes resource ${resourceId} deleted successfully` }, null, 2) }],
+      };
+    }
+  );
+
+  server.tool(
+    ENVIRONMENT_TOOLS.environments_get_vm_resource,
+    "Retrieves a virtual machine resource group for a specific environment.",
+    {
+      project: z.string().describe("Project ID or name"),
+      environmentId: z.number().describe("ID of the environment"),
+      resourceId: z.number().describe("ID of the virtual machine resource group"),
+    },
+    async ({ project, environmentId, resourceId }) => {
+      const connection = await connectionProvider();
+      const taskAgentApi = await connection.getTaskAgentApi();
+      const resource = await taskAgentApi.getVirtualMachineGroup(project, environmentId, resourceId);
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(resource, null, 2) }],
+      };
+    }
+  );
+
+  server.tool(
+    ENVIRONMENT_TOOLS.environments_add_vm_resource,
+    "Adds a virtual machine resource group to an environment.",
+    {
+      project: z.string().describe("Project ID or name"),
+      environmentId: z.number().describe("ID of the environment"),
+      name: z.string().describe("Name of the virtual machine resource group"),
+    },
+    async ({ project, environmentId, name }) => {
+      const connection = await connectionProvider();
+      const taskAgentApi = await connection.getTaskAgentApi();
+      const resource = await taskAgentApi.addVirtualMachineGroup({ name }, project, environmentId);
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(resource, null, 2) }],
+      };
+    }
+  );
+
+  server.tool(
+    ENVIRONMENT_TOOLS.environments_update_vm_resource,
+    "Updates a virtual machine resource group for an environment, including tags.",
+    {
+      project: z.string().describe("Project ID or name"),
+      environmentId: z.number().describe("ID of the environment"),
+      name: z.string().optional().describe("New name for the virtual machine resource group"),
+      tags: z.array(z.string()).optional().describe("Tags for the virtual machine resource group"),
+    },
+    async ({ project, environmentId, name, tags }) => {
+      const connection = await connectionProvider();
+      const taskAgentApi = await connection.getTaskAgentApi();
+      const resource = await taskAgentApi.updateVirtualMachineGroup({ name, tags } as any, project, environmentId);
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(resource, null, 2) }],
+      };
+    }
+  );
+
+  server.tool(
+    ENVIRONMENT_TOOLS.environments_delete_vm_resource,
+    "Deletes a virtual machine resource group from an environment.",
+    {
+      project: z.string().describe("Project ID or name"),
+      environmentId: z.number().describe("ID of the environment"),
+      resourceId: z.number().describe("ID of the virtual machine resource group to delete"),
+    },
+    async ({ project, environmentId, resourceId }) => {
+      const connection = await connectionProvider();
+      const taskAgentApi = await connection.getTaskAgentApi();
+      await taskAgentApi.deleteVirtualMachineGroup(project, environmentId, resourceId);
+
+      return {
+        content: [{ type: "text", text: JSON.stringify({ success: true, message: `Virtual machine resource group ${resourceId} deleted successfully` }, null, 2) }],
       };
     }
   );

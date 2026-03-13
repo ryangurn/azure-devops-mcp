@@ -59,3 +59,32 @@ export const mockDeploymentRecords = {
   ],
   count: 2,
 };
+
+export const mockKubernetesResource = {
+  id: 10,
+  name: "k8s-dev",
+  clusterName: "dev-cluster",
+  namespace: "default",
+  serviceEndpointId: "endpoint-1",
+  tags: ["dev", "kubernetes"],
+  type: "kubernetes",
+  environmentReference: { id: 1, name: "Development" },
+};
+
+export const mockVirtualMachineGroup = {
+  id: 20,
+  name: "vm-pool-dev",
+  tags: ["dev", "vm"],
+  type: "virtualMachine",
+  environmentReference: { id: 1, name: "Development" },
+  poolId: 5,
+};
+
+export const mockUpdatedVirtualMachineGroup = {
+  id: 20,
+  name: "vm-pool-updated",
+  tags: ["staging", "vm"],
+  type: "virtualMachine",
+  environmentReference: { id: 1, name: "Development" },
+  poolId: 5,
+};

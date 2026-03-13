@@ -9,6 +9,12 @@
 | Core              | [mcp_ado_core_list_projects](#mcp_ado_core_list_projects)                                                 | List all projects in the organization                    |
 | Core              | [mcp_ado_core_list_project_teams](#mcp_ado_core_list_project_teams)                                       | List teams within a project                              |
 | Core              | [mcp_ado_core_get_identity_ids](#mcp_ado_core_get_identity_ids)                                           | Retrieve identity IDs by search filter                   |
+| Environments      | [mcp_ado_environments_list](#mcp_ado_environments_list)                                                   | List pipeline environments for a project                 |
+| Environments      | [mcp_ado_environments_get](#mcp_ado_environments_get)                                                     | Get a pipeline environment by ID                         |
+| Environments      | [mcp_ado_environments_create](#mcp_ado_environments_create)                                               | Create a new pipeline environment                        |
+| Environments      | [mcp_ado_environments_update](#mcp_ado_environments_update)                                               | Update an environment's name or description              |
+| Environments      | [mcp_ado_environments_delete](#mcp_ado_environments_delete)                                               | Delete a pipeline environment                            |
+| Environments      | [mcp_ado_environments_get_deployment_records](#mcp_ado_environments_get_deployment_records)               | Get deployment execution records for an environment      |
 | Pipelines         | [mcp_ado_pipelines_create_pipeline](#mcp_ado_pipelines_create_pipeline)                                   | Create a new pipeline with YAML configuration            |
 | Pipelines         | [mcp_ado_pipelines_get_builds](#mcp_ado_pipelines_get_builds)                                             | Retrieve a list of builds with optional filters          |
 | Pipelines         | [mcp_ado_pipelines_get_build_status](#mcp_ado_pipelines_get_build_status)                                 | Get the status of a specific build                       |
@@ -21,6 +27,17 @@
 | Pipelines         | [mcp_ado_pipelines_get_run](#mcp_ado_pipelines_get_run)                                                   | Get details of a specific pipeline run                   |
 | Pipelines         | [mcp_ado_pipelines_list_runs](#mcp_ado_pipelines_list_runs)                                               | List recent runs for a pipeline                          |
 | Pipelines         | [mcp_ado_pipelines_update_build_stage](#mcp_ado_pipelines_update_build_stage)                             | Update a build stage (cancel, retry, or run)             |
+| Releases          | [mcp_ado_releases_list_definitions](#mcp_ado_releases_list_definitions)                                   | List release definitions for a project                   |
+| Releases          | [mcp_ado_releases_get_definition](#mcp_ado_releases_get_definition)                                       | Get a release definition by ID                           |
+| Releases          | [mcp_ado_releases_get_definition_revisions](#mcp_ado_releases_get_definition_revisions)                   | Get revision history of a release definition             |
+| Releases          | [mcp_ado_releases_list](#mcp_ado_releases_list)                                                           | List releases with filtering                             |
+| Releases          | [mcp_ado_releases_get](#mcp_ado_releases_get)                                                             | Get a specific release by ID                             |
+| Releases          | [mcp_ado_releases_create](#mcp_ado_releases_create)                                                       | Create a release from a definition                       |
+| Releases          | [mcp_ado_releases_get_logs](#mcp_ado_releases_get_logs)                                                   | Get logs for a release                                   |
+| Releases          | [mcp_ado_releases_list_deployments](#mcp_ado_releases_list_deployments)                                   | List deployment records                                  |
+| Releases          | [mcp_ado_releases_list_approvals](#mcp_ado_releases_list_approvals)                                       | List pending release approvals                           |
+| Releases          | [mcp_ado_releases_update_approval](#mcp_ado_releases_update_approval)                                     | Approve or reject a release approval                     |
+| Releases          | [mcp_ado_releases_update_environment](#mcp_ado_releases_update_environment)                               | Update release environment status                        |
 | Repositories      | [mcp_ado_repo_list_repos_by_project](#mcp_ado_repo_list_repos_by_project)                                 | List all repositories in a project                       |
 | Repositories      | [mcp_ado_repo_get_repo_by_name_or_id](#mcp_ado_repo_get_repo_by_name_or_id)                               | Get repository details by name or ID                     |
 | Repositories      | [mcp_ado_repo_list_branches_by_repo](#mcp_ado_repo_list_branches_by_repo)                                 | List all branches in a repository                        |
@@ -128,6 +145,50 @@ Retrieve Azure DevOps identity IDs for a provided search filter.
 - **Required**: `searchFilter`
 - **Optional**: None
 
+## Environments
+
+### mcp_ado_environments_list
+
+List pipeline environments for a project.
+
+- **Required**: `project`
+- **Optional**: `continuationToken`, `name`, `top`
+
+### mcp_ado_environments_get
+
+Get a pipeline environment by ID.
+
+- **Required**: `project`, `environmentId`
+- **Optional**: `expands`
+
+### mcp_ado_environments_create
+
+Create a new pipeline environment.
+
+- **Required**: `project`, `name`
+- **Optional**: `description`
+
+### mcp_ado_environments_update
+
+Update an environment's name or description.
+
+- **Required**: `project`, `environmentId`
+- **Optional**: `description`, `name`
+
+### mcp_ado_environments_delete
+
+Delete a pipeline environment.
+
+- **Required**: `project`, `environmentId`
+- **Optional**: None
+
+### mcp_ado_environments_get_deployment_records
+
+Get deployment execution records for an environment.
+
+- **Required**: `project`, `environmentId`
+- **Optional**: `continuationToken`, `top`
+
 ## Pipelines
 
 ### mcp_ado_pipelines_create_pipeline
@@ -226,6 +287,85 @@ Downloads a pipeline artifact.
 
 - **Required**: `project`, `buildId`, `artifactName`
 - **Optional**: `destinationPath`
+
+## Releases
+
+### mcp_ado_releases_list_definitions
+
+Retrieves a list of release definitions for a given project.
+
+- **Required**: `project`
+- **Optional**: `continuationToken`, `expand`, `isDeleted`, `isExactNameMatch`, `path`, `queryOrder`, `searchText`, `top`
+
+### mcp_ado_releases_get_definition
+
+Retrieves a specific release definition by ID.
+
+- **Required**: `project`, `definitionId`
+- **Optional**: None
+
+### mcp_ado_releases_get_definition_revisions
+
+Retrieves the revision history of a specific release definition.
+
+- **Required**: `project`, `definitionId`
+- **Optional**: None
+
+### mcp_ado_releases_list
+
+Retrieves a list of releases for a given project.
+
+- **Required**: `project`
+- **Optional**: `continuationToken`, `definitionId`, `expand`, `maxCreatedTime`, `minCreatedTime`, `queryOrder`, `searchText`, `sourceBranchFilter`, `statusFilter`, `tagFilter`, `top`
+
+### mcp_ado_releases_get
+
+Retrieves a specific release by ID.
+
+- **Required**: `project`, `releaseId`
+- **Optional**: `expand`
+
+### mcp_ado_releases_create
+
+Creates a new release.
+
+- **Required**: `project`, `definitionId`
+- **Optional**: `artifacts`, `description`, `isDraft`, `variables`
+
+### mcp_ado_releases_get_logs
+
+Retrieves logs for a specific release.
+
+- **Required**: `project`, `releaseId`
+- **Optional**: None
+
+### mcp_ado_releases_list_deployments
+
+Retrieves a list of deployments for a given project.
+
+- **Required**: `project`
+- **Optional**: `continuationToken`, `definitionId`, `deploymentStatus`, `latestAttemptsOnly`, `maxStartedTime`, `minStartedTime`, `queryOrder`, `sourceBranch`, `top`
+
+### mcp_ado_releases_list_approvals
+
+Retrieves a list of approvals for a given project.
+
+- **Required**: `project`
+- **Optional**: `assignedToFilter`, `continuationToken`, `includeMyGroupApprovals`, `releaseIdsFilter`, `statusFilter`, `top`, `typeFilter`
+
+### mcp_ado_releases_update_approval
+
+Updates a release approval.
+
+- **Required**: `project`, `approvalId`, `status`
+- **Optional**: `comments`
+
+### mcp_ado_releases_update_environment
+
+Updates the status of a release environment.
+
+- **Required**: `project`, `releaseId`, `environmentId`, `status`
+- **Optional**: `comment`
 
 ## Repositories
 

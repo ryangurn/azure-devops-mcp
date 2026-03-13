@@ -43,7 +43,7 @@ function configureReleaseTools(server: McpServer, tokenProvider: () => Promise<s
         .enum(getEnumKeys(ReleaseDefinitionExpands) as [string, ...string[]])
         .optional()
         .describe("Expand options for the release definition"),
-      top: z.number().optional().describe("Maximum number of release definitions to return"),
+      top: z.coerce.number().optional().describe("Maximum number of release definitions to return"),
       continuationToken: z.string().optional().describe("Token for continuing paged results"),
       queryOrder: z
         .enum(getEnumKeys(ReleaseDefinitionQueryOrder) as [string, ...string[]])
@@ -84,7 +84,7 @@ function configureReleaseTools(server: McpServer, tokenProvider: () => Promise<s
     "Retrieves a specific release definition by ID.",
     {
       project: z.string().describe("Project ID or name to get the release definition for"),
-      definitionId: z.number().describe("ID of the release definition to retrieve"),
+      definitionId: z.coerce.number().describe("ID of the release definition to retrieve"),
     },
     async ({ project, definitionId }) => {
       const connection = await connectionProvider();
@@ -102,7 +102,7 @@ function configureReleaseTools(server: McpServer, tokenProvider: () => Promise<s
     "Retrieves the revision history of a specific release definition.",
     {
       project: z.string().describe("Project ID or name to get the release definition revisions for"),
-      definitionId: z.number().describe("ID of the release definition to get revisions for"),
+      definitionId: z.coerce.number().describe("ID of the release definition to get revisions for"),
     },
     async ({ project, definitionId }) => {
       const connection = await connectionProvider();
@@ -120,7 +120,7 @@ function configureReleaseTools(server: McpServer, tokenProvider: () => Promise<s
     "Retrieves a list of releases for a given project.",
     {
       project: z.string().describe("Project ID or name to get releases for"),
-      definitionId: z.number().optional().describe("Release definition ID to filter releases"),
+      definitionId: z.coerce.number().optional().describe("Release definition ID to filter releases"),
       searchText: z.string().optional().describe("Text to search for in release names"),
       statusFilter: z
         .enum(getEnumKeys(ReleaseStatus) as [string, ...string[]])
@@ -130,8 +130,8 @@ function configureReleaseTools(server: McpServer, tokenProvider: () => Promise<s
         .enum(getEnumKeys(ReleaseQueryOrder) as [string, ...string[]])
         .optional()
         .describe("Order in which releases are returned"),
-      top: z.number().optional().describe("Maximum number of releases to return"),
-      continuationToken: z.number().optional().describe("Continuation token for paged results"),
+      top: z.coerce.number().optional().describe("Maximum number of releases to return"),
+      continuationToken: z.coerce.number().optional().describe("Continuation token for paged results"),
       expand: z
         .enum(getEnumKeys(ReleaseExpands) as [string, ...string[]])
         .optional()
@@ -177,7 +177,7 @@ function configureReleaseTools(server: McpServer, tokenProvider: () => Promise<s
     "Retrieves a specific release by ID.",
     {
       project: z.string().describe("Project ID or name to get the release for"),
-      releaseId: z.number().describe("ID of the release to retrieve"),
+      releaseId: z.coerce.number().describe("ID of the release to retrieve"),
       expand: z
         .enum(getEnumKeys(SingleReleaseExpands) as [string, ...string[]])
         .optional()
@@ -199,7 +199,7 @@ function configureReleaseTools(server: McpServer, tokenProvider: () => Promise<s
     "Creates a new release.",
     {
       project: z.string().describe("Project ID or name to create the release in"),
-      definitionId: z.number().describe("ID of the release definition to create a release for"),
+      definitionId: z.coerce.number().describe("ID of the release definition to create a release for"),
       description: z.string().optional().describe("Description of the release"),
       isDraft: z.boolean().optional().describe("Whether the release is a draft"),
       artifacts: z
@@ -248,7 +248,7 @@ function configureReleaseTools(server: McpServer, tokenProvider: () => Promise<s
     "Retrieves logs for a specific release.",
     {
       project: z.string().describe("Project ID or name to get release logs for"),
-      releaseId: z.number().describe("ID of the release to get logs for"),
+      releaseId: z.coerce.number().describe("ID of the release to get logs for"),
     },
     async ({ project, releaseId }) => {
       const connection = await connectionProvider();
@@ -283,13 +283,13 @@ function configureReleaseTools(server: McpServer, tokenProvider: () => Promise<s
     "Retrieves a list of deployments for a given project.",
     {
       project: z.string().describe("Project ID or name to get deployments for"),
-      definitionId: z.number().optional().describe("Release definition ID to filter deployments"),
+      definitionId: z.coerce.number().optional().describe("Release definition ID to filter deployments"),
       deploymentStatus: z
         .enum(getEnumKeys(DeploymentStatus) as [string, ...string[]])
         .optional()
         .describe("Deployment status to filter"),
-      top: z.number().optional().describe("Maximum number of deployments to return"),
-      continuationToken: z.number().optional().describe("Token for continuing paged results"),
+      top: z.coerce.number().optional().describe("Maximum number of deployments to return"),
+      continuationToken: z.coerce.number().optional().describe("Token for continuing paged results"),
       queryOrder: z
         .enum(getEnumKeys(ReleaseQueryOrder) as [string, ...string[]])
         .optional()
@@ -337,13 +337,13 @@ function configureReleaseTools(server: McpServer, tokenProvider: () => Promise<s
         .enum(getEnumKeys(ApprovalStatus) as [string, ...string[]])
         .optional()
         .describe("Approval status to filter"),
-      releaseIdsFilter: z.array(z.number()).optional().describe("Array of release IDs to filter approvals"),
+      releaseIdsFilter: z.array(z.coerce.number()).optional().describe("Array of release IDs to filter approvals"),
       typeFilter: z
         .enum(getEnumKeys(ApprovalType) as [string, ...string[]])
         .optional()
         .describe("Approval type to filter"),
-      top: z.number().optional().describe("Maximum number of approvals to return"),
-      continuationToken: z.number().optional().describe("Token for continuing paged results"),
+      top: z.coerce.number().optional().describe("Maximum number of approvals to return"),
+      continuationToken: z.coerce.number().optional().describe("Token for continuing paged results"),
       includeMyGroupApprovals: z.boolean().optional().describe("Whether to include approvals for groups the user belongs to"),
     },
     async ({ project, assignedToFilter, statusFilter, releaseIdsFilter, typeFilter, top, continuationToken, includeMyGroupApprovals }) => {
@@ -372,7 +372,7 @@ function configureReleaseTools(server: McpServer, tokenProvider: () => Promise<s
     "Updates a release approval.",
     {
       project: z.string().describe("Project ID or name"),
-      approvalId: z.number().describe("ID of the approval to update"),
+      approvalId: z.coerce.number().describe("ID of the approval to update"),
       status: z.enum(["approved", "rejected"]).describe("New status for the approval"),
       comments: z.string().optional().describe("Comments for the approval"),
     },
@@ -393,8 +393,8 @@ function configureReleaseTools(server: McpServer, tokenProvider: () => Promise<s
     "Updates the status of a release environment.",
     {
       project: z.string().describe("Project ID or name"),
-      releaseId: z.number().describe("ID of the release"),
-      environmentId: z.number().describe("ID of the environment to update"),
+      releaseId: z.coerce.number().describe("ID of the release"),
+      environmentId: z.coerce.number().describe("ID of the environment to update"),
       status: z.enum(getEnumKeys(EnvironmentStatus) as [string, ...string[]]).describe("New status for the environment"),
       comment: z.string().optional().describe("Comment for the environment update"),
     },

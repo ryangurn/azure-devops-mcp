@@ -18,7 +18,6 @@
 | Environments      | [mcp_ado_environments_get_kubernetes_resource](#mcp_ado_environments_get_kubernetes_resource)             | Get a Kubernetes resource for an environment             |
 | Environments      | [mcp_ado_environments_add_kubernetes_resource](#mcp_ado_environments_add_kubernetes_resource)             | Add a Kubernetes resource to an environment              |
 | Environments      | [mcp_ado_environments_delete_kubernetes_resource](#mcp_ado_environments_delete_kubernetes_resource)       | Delete a Kubernetes resource from an environment         |
-| Environments      | [mcp_ado_environments_get_vm_resource](#mcp_ado_environments_get_vm_resource)                             | Get a VM resource group for an environment               |
 | Environments      | [mcp_ado_environments_add_vm_resource](#mcp_ado_environments_add_vm_resource)                             | Add a VM resource group to an environment                |
 | Environments      | [mcp_ado_environments_update_vm_resource](#mcp_ado_environments_update_vm_resource)                       | Update a VM resource group including tags                |
 | Environments      | [mcp_ado_environments_delete_vm_resource](#mcp_ado_environments_delete_vm_resource)                       | Delete a VM resource group from an environment           |
@@ -213,13 +212,6 @@ Adds a Kubernetes resource to an environment.
 ### mcp_ado_environments_delete_kubernetes_resource
 
 Deletes a Kubernetes resource from an environment.
-
-- **Required**: `project`, `environmentId`, `resourceId`
-- **Optional**: None
-
-### mcp_ado_environments_get_vm_resource
-
-Retrieves a virtual machine resource group for a specific environment.
 
 - **Required**: `project`, `environmentId`, `resourceId`
 - **Optional**: None

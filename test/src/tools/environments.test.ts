@@ -456,33 +456,6 @@ describe("configureEnvironmentTools", () => {
     });
   });
 
-  describe("environments_get_vm_resource tool", () => {
-    it("should fetch VM resource group via REST with correct URL", async () => {
-      configureEnvironmentTools(server, tokenProvider, connectionProvider, userAgentProvider);
-      const call = (server.tool as jest.Mock).mock.calls.find(([toolName]) => toolName === "environments_get_vm_resource");
-      if (!call) throw new Error("environments_get_vm_resource tool not registered");
-      const [, , , handler] = call;
-
-      (tokenProvider as jest.Mock).mockResolvedValue("mock-token");
-      const mockResponse = {
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockVirtualMachineGroup),
-      };
-      (global.fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue(mockResponse as unknown as Response);
-
-      const result = await handler({ project: "test-project", environmentId: 1, resourceId: 20 });
-
-      expect(global.fetch).toHaveBeenCalledWith(`https://dev.azure.com/test-org/test-project/_apis/distributedtask/environments/1/providers/virtualmachinegroups/20?api-version=${apiVersion}`, {
-        method: "GET",
-        headers: {
-          "Authorization": "Bearer mock-token",
-          "User-Agent": "Jest",
-        },
-      });
-      expect(result.content[0].text).toBe(JSON.stringify(mockVirtualMachineGroup, null, 2));
-    });
-  });
-
   describe("environments_add_vm_resource tool", () => {
     it("should create VM resource group via REST with correct URL and body", async () => {
       configureEnvironmentTools(server, tokenProvider, connectionProvider, userAgentProvider);

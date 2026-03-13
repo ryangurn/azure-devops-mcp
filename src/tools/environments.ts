@@ -17,7 +17,6 @@ const ENVIRONMENT_TOOLS = {
   environments_get_kubernetes_resource: "environments_get_kubernetes_resource",
   environments_add_kubernetes_resource: "environments_add_kubernetes_resource",
   environments_delete_kubernetes_resource: "environments_delete_kubernetes_resource",
-  environments_get_vm_resource: "environments_get_vm_resource",
   environments_add_vm_resource: "environments_add_vm_resource",
   environments_update_vm_resource: "environments_update_vm_resource",
   environments_delete_vm_resource: "environments_delete_vm_resource",
@@ -30,7 +29,7 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     {
       project: z.string().describe("Project ID or name to get environments for"),
       name: z.string().optional().describe("Name of the environment to filter"),
-      top: z.number().optional().describe("Maximum number of environments to return"),
+      top: z.coerce.number().optional().describe("Maximum number of environments to return"),
       continuationToken: z.string().optional().describe("Token for continuing paged results"),
     },
     async ({ project, name, top, continuationToken }) => {
@@ -49,7 +48,7 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     "Retrieves details of a specific environment by ID.",
     {
       project: z.string().describe("Project ID or name to get the environment for"),
-      environmentId: z.number().describe("ID of the environment to retrieve"),
+      environmentId: z.coerce.number().describe("ID of the environment to retrieve"),
       expands: z
         .enum(getEnumKeys(EnvironmentExpands) as [string, ...string[]])
         .optional()
@@ -90,7 +89,7 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     "Updates an existing environment in a project.",
     {
       project: z.string().describe("Project ID or name to update the environment in"),
-      environmentId: z.number().describe("ID of the environment to update"),
+      environmentId: z.coerce.number().describe("ID of the environment to update"),
       name: z.string().optional().describe("New name for the environment"),
       description: z.string().optional().describe("New description for the environment"),
     },
@@ -110,7 +109,7 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     "Deletes an environment from a project.",
     {
       project: z.string().describe("Project ID or name to delete the environment from"),
-      environmentId: z.number().describe("ID of the environment to delete"),
+      environmentId: z.coerce.number().describe("ID of the environment to delete"),
     },
     async ({ project, environmentId }) => {
       const connection = await connectionProvider();
@@ -128,8 +127,8 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     "Retrieves deployment records for a specific environment.",
     {
       project: z.string().describe("Project ID or name to get deployment records for"),
-      environmentId: z.number().describe("ID of the environment to get deployment records for"),
-      top: z.number().optional().describe("Maximum number of deployment records to return"),
+      environmentId: z.coerce.number().describe("ID of the environment to get deployment records for"),
+      top: z.coerce.number().optional().describe("Maximum number of deployment records to return"),
       continuationToken: z.string().optional().describe("Token for continuing paged results"),
     },
     async ({ project, environmentId, top, continuationToken }) => {
@@ -173,8 +172,8 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     "Retrieves a Kubernetes resource for a specific environment.",
     {
       project: z.string().describe("Project ID or name"),
-      environmentId: z.number().describe("ID of the environment"),
-      resourceId: z.number().describe("ID of the Kubernetes resource"),
+      environmentId: z.coerce.number().describe("ID of the environment"),
+      resourceId: z.coerce.number().describe("ID of the Kubernetes resource"),
     },
     async ({ project, environmentId, resourceId }) => {
       const connection = await connectionProvider();
@@ -192,7 +191,7 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     "Adds a Kubernetes resource to an environment.",
     {
       project: z.string().describe("Project ID or name"),
-      environmentId: z.number().describe("ID of the environment"),
+      environmentId: z.coerce.number().describe("ID of the environment"),
       name: z.string().describe("Name of the Kubernetes resource"),
       clusterName: z.string().optional().describe("Name of the Kubernetes cluster"),
       namespace: z.string().describe("Kubernetes namespace"),
@@ -215,8 +214,8 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     "Deletes a Kubernetes resource from an environment.",
     {
       project: z.string().describe("Project ID or name"),
-      environmentId: z.number().describe("ID of the environment"),
-      resourceId: z.number().describe("ID of the Kubernetes resource to delete"),
+      environmentId: z.coerce.number().describe("ID of the environment"),
+      resourceId: z.coerce.number().describe("ID of the Kubernetes resource to delete"),
     },
     async ({ project, environmentId, resourceId }) => {
       const connection = await connectionProvider();
@@ -230,49 +229,15 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
   );
 
   // VM resource tools use REST calls instead of the SDK because the SDK's
-  // VirtualMachineGroup methods (getVirtualMachineGroup, updateVirtualMachineGroup, etc.)
-  // have broken route mappings that return null or cause internal server errors.
-  server.tool(
-    ENVIRONMENT_TOOLS.environments_get_vm_resource,
-    "Retrieves a virtual machine resource group for a specific environment.",
-    {
-      project: z.string().describe("Project ID or name"),
-      environmentId: z.number().describe("ID of the environment"),
-      resourceId: z.number().describe("ID of the virtual machine resource group"),
-    },
-    async ({ project, environmentId, resourceId }) => {
-      const connection = await connectionProvider();
-      const orgUrl = connection.serverUrl;
-      const endpoint = `${orgUrl}/${project}/_apis/distributedtask/environments/${environmentId}/providers/virtualmachinegroups/${resourceId}?api-version=${apiVersion}`;
-      const token = await tokenProvider();
-
-      const response = await fetch(endpoint, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "User-Agent": userAgentProvider(),
-        },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to get virtual machine resource group: ${response.status} ${errorText}`);
-      }
-
-      const resource = await response.json();
-
-      return {
-        content: [{ type: "text", text: JSON.stringify(resource, null, 2) }],
-      };
-    }
-  );
-
+  // VirtualMachineGroup methods have broken route mappings.
+  // Note: Individual VM resources can be viewed via environments_get with expands=ResourceReferences.
+  // There is no public REST endpoint for getting individual VM resources by ID.
   server.tool(
     ENVIRONMENT_TOOLS.environments_add_vm_resource,
     "Adds a virtual machine resource group to an environment.",
     {
       project: z.string().describe("Project ID or name"),
-      environmentId: z.number().describe("ID of the environment"),
+      environmentId: z.coerce.number().describe("ID of the environment"),
       name: z.string().describe("Name of the virtual machine resource group"),
     },
     async ({ project, environmentId, name }) => {
@@ -312,8 +277,8 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     "Updates tags on a virtual machine environment resource using the Contribution API.",
     {
       project: z.string().describe("Project ID or name"),
-      environmentId: z.number().describe("ID of the environment"),
-      resourceId: z.number().describe("ID of the virtual machine resource to update"),
+      environmentId: z.coerce.number().describe("ID of the environment"),
+      resourceId: z.coerce.number().describe("ID of the virtual machine resource to update"),
       tags: z.array(z.string()).describe("Complete set of tags for the resource (replaces all existing tags)"),
     },
     async ({ project, environmentId, resourceId, tags }) => {
@@ -374,8 +339,8 @@ function configureEnvironmentTools(server: McpServer, tokenProvider: () => Promi
     "Deletes a virtual machine resource group from an environment.",
     {
       project: z.string().describe("Project ID or name"),
-      environmentId: z.number().describe("ID of the environment"),
-      resourceId: z.number().describe("ID of the virtual machine resource group to delete"),
+      environmentId: z.coerce.number().describe("ID of the environment"),
+      resourceId: z.coerce.number().describe("ID of the virtual machine resource group to delete"),
     },
     async ({ project, environmentId, resourceId }) => {
       const connection = await connectionProvider();
